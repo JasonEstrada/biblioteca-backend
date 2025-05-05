@@ -15,5 +15,3 @@ yarn.lock
 .DS_Store
 .vscode/
 .idea/
-
-.gitignore
