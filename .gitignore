@@ -1,0 +1,17 @@
+# Ignorar el archivo .env
+.env
+
+# Ignorar la carpeta node_modules (paquetes de Node.js)
+node_modules/
+
+# Ignorar archivos de log
+*.log
+
+# Ignorar archivos de dependencias de producción en caso de que se suban sin querer
+package-lock.json
+yarn.lock
+
+# Ignorar archivos temporales generados por editores de texto
+.DS_Store
+.vscode/
+.idea/
