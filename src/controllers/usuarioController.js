@@ -272,7 +272,7 @@ const habilitarUsuario = (req, res) => {
 };
 
 const obtenerUsuarios = (req, res) => {
-  const { id } = req.query;
+  const { id, incluyendo_inhabilitados } = req.query;
 
   let query = 'SELECT id, nombre, email FROM usuarios WHERE 1=1'; // 1=1 es una condición siempre verdadera, que facilita la concatenación de filtros
 
@@ -284,7 +284,9 @@ const obtenerUsuarios = (req, res) => {
     params.push(id);
   }
 
-  query += ' AND activo = 1'; // Solo libros activos
+  if (!incluyendo_inhabilitados || incluyendo_inhabilitados !== 'true') {
+    query += ' AND activo = 1'; // Solo usuarios activos por defecto
+  } // Solo libros activos
 
   // Ejecutar la consulta
   db.query(query, params, (err, result) => {
@@ -301,4 +303,36 @@ const obtenerUsuarios = (req, res) => {
   });
 };
 
-module.exports = { crearUsuario, crearUsuarioAdmin, actualizarUsuario, inhabilitarUsuario, habilitarUsuario, obtenerUsuarios };
+const obtenerHistorialReservasUsuario = (req, res) => {
+  const usuarioId = req.user.id; // ID del usuario autenticado (de la decodificación del JWT)
+
+  // Si el usuario es un administrador, puede ver el historial de cualquier usuario pasando el ID como parámetro
+  const idUsuarioConsulta = req.params.id || usuarioId; // Si no se pasa el ID, se usa el ID del usuario autenticado
+
+  // Verificar si el usuario tiene permisos para consultar el historial de otro usuario (si no es administrador)
+  if (idUsuarioConsulta !== usuarioId && req.user.permiso !== 'admin') {
+    return res.status(403).json({ message: 'No tienes permisos para ver el historial de este usuario.' });
+  }
+
+  // Consultar el historial de reservas de un usuario, uniendo las tablas 'reservas' y 'libros' para obtener el nombre del libro
+  const query = `
+    SELECT libros.id AS id_libro, libros.titulo AS nombre_libro, reservas.id AS id_reserva, reservas.fecha_reserva, reservas.fecha_entrega
+    FROM reservas
+    JOIN libros ON reservas.libro_id = libros.id
+    WHERE reservas.usuario_id = ?
+  `;
+
+  db.query(query, [idUsuarioConsulta], (err, result) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error en la consulta a la base de datos' });
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'No tienes reservas en el historial' });
+    }
+
+    res.status(200).json(result); // Retornar el historial de reservas
+  });
+};
+
+module.exports = { crearUsuario, crearUsuarioAdmin, actualizarUsuario, inhabilitarUsuario, habilitarUsuario, obtenerUsuarios, obtenerHistorialReservasUsuario  };

@@ -50,6 +50,7 @@ router.post('/login', (req, res) => {
     const payload = {
       id: usuario.id,
       email: usuario.email,
+      nombre: usuario.nombre,
       permiso: usuario.permiso
     };
 
